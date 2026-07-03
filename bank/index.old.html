@@ -68,11 +68,6 @@
             cursor: not-allowed;
         }
 
-        .btn-clear {
-            background-color: #64748b;
-        }
-        .btn-clear:hover:not(:disabled) { background-color: #475569; }
-
         .stats {
             font-size: 0.9rem;
             color: #64748b;
@@ -116,12 +111,6 @@
             60% { content: ' ...'; }
             80%, 100% { content: ''; }
         }
-
-        .auto-save-tip {
-            font-size: 0.8rem;
-            color: #22c55e;
-            margin-left: 10px;
-        }
     </style>
 </head>
 
@@ -133,22 +122,17 @@
         <div class="rule-box">
             <strong>使用规则：</strong><br>
             1. <strong>数字</strong>：固定位。<br>
-            2. <strong>字母 (a-z)</strong>：相同字母对应相同数字 (如 aaa 只能是 000,111...)。<br>
-            3. <strong>星号 (*)</strong>：通配符匹配任意数字 (如 ** 可以是 01,12...99)。<br>
-            4. <strong>自动保存</strong>：输入内容和生成结果会自动保存，刷新页面不丢失。<br>
-            5. 输入时会自动每 4 位添加空格。<br>
-            6. 输出最多显示前一万条数据，超出后不再显示，请调整输入内容。
+            2. <strong>字母 (a-z)</strong>：相同字母对应相同数字 (如 aaa 只能是 000, 111...)。<br>
+            3. <strong>星号 (*)</strong>：通配符 (如 ** 可以是 01, 12...)。<br>
         </div>
 
         <div class="input-group">
             <label for="pattern">输入模式</label>
-            <input type="text" id="pattern" placeholder="6225 88** aabb cccc" value="" autocomplete="off">
-            <span class="auto-save-tip" id="saveTip"></span>
+            <input type="text" id="pattern" placeholder="6225 8801 aabb cccc" value="" autocomplete="off">
         </div>
 
         <div class="controls">
             <button id="btnGenerate" onclick="startGeneration()">生成卡号</button>
-            <button class="btn-clear" onclick="clearAll()">清空数据</button>
             <span class="stats" id="statusText">准备就绪</span>
         </div>
 
@@ -163,75 +147,10 @@
 
     <script>
         const MAX_RESULTS = 10000;
-        const STORAGE_KEY_INPUT = 'luhn_generator_input';
-        const STORAGE_KEY_RESULT = 'luhn_generator_result';
-        const STORAGE_KEY_STATUS = 'luhn_generator_status';
 
         // 输入框自动格式化（修复：第 5 个字符才开始加空格）
         const inputEl = document.getElementById('pattern');
-        const resultContainer = document.getElementById('resultContainer');
-        const statusText = document.getElementById('statusText');
-        // const saveTip = document.getElementById('saveTip');
 
-        // 页面加载时恢复保存的内容
-        window.addEventListener('DOMContentLoaded', function() {
-            const savedInput = localStorage.getItem(STORAGE_KEY_INPUT);
-            const savedResult = localStorage.getItem(STORAGE_KEY_RESULT);
-            const savedStatus = localStorage.getItem(STORAGE_KEY_STATUS);
-
-            if (savedInput) {
-                inputEl.value = savedInput;
-            }
-            if (savedResult) {
-                resultContainer.textContent = savedResult;
-            }
-            if (savedStatus) {
-                statusText.textContent = savedStatus;
-            }
-        });
-
-        // 保存输入内容
-        function saveInput() {
-            localStorage.setItem(STORAGE_KEY_INPUT, inputEl.value);
-            // showSaveTip();
-        }
-
-        // 保存结果
-        function saveResult(text) {
-            localStorage.setItem(STORAGE_KEY_RESULT, text);
-            // showSaveTip();
-        }
-
-        // 保存状态
-        function saveStatus(text) {
-            localStorage.setItem(STORAGE_KEY_STATUS, text);
-        }
-
-        // 显示保存提示
-        let saveTipTimeout;
-        function showSaveTip() {
-            saveTip.textContent = '✓ 已保存';
-            clearTimeout(saveTipTimeout);
-            saveTipTimeout = setTimeout(() => {
-                saveTip.textContent = '';
-            }, 1500);
-        }
-
-        // 清空所有数据
-        function clearAll() {
-            if (confirm('确定要清空输入内容和生成结果吗？')) {
-                localStorage.removeItem(STORAGE_KEY_INPUT);
-                localStorage.removeItem(STORAGE_KEY_RESULT);
-                localStorage.removeItem(STORAGE_KEY_STATUS);
-                inputEl.value = '';
-                resultContainer.textContent = '';
-                statusText.textContent = '准备就绪';
-                // saveTip.textContent = '✓ 已清空';
-                // setTimeout(() => saveTip.textContent = '', 1500);
-            }
-        }
-
-        // 输入框事件
         inputEl.addEventListener('input', function(e) {
             const cursorPos = e.target.selectionStart;
             const newValue = e.target.value;
@@ -261,9 +180,6 @@
                 e.target.value = formattedVal;
                 e.target.selectionStart = e.target.selectionEnd = newCursorPos;
             }
-
-            // 5. 自动保存
-            saveInput();
         });
 
         // Luhn 算法校验
@@ -291,6 +207,8 @@
 
         async function startGeneration() {
             const rawInput = document.getElementById('pattern').value;
+            const resultContainer = document.getElementById('resultContainer');
+            const statusText = document.getElementById('statusText');
             const btnGenerate = document.getElementById('btnGenerate');
 
             const cleanInput = rawInput.replace(/\s+/g, '').toLowerCase();
@@ -332,38 +250,28 @@
             btnGenerate.classList.add('loading-dots');
             resultContainer.textContent = "";
             statusText.textContent = "正在计算...";
-            saveStatus(statusText.textContent);
 
             const results = [];
 
             try {
                 await generateAsync(0, {}, pattern, results, (count) => {
                     statusText.textContent = `已找到 ${count} 条...`;
-                    saveStatus(statusText.textContent);
 
                     if (results.length > 0 && results.length % 200 === 0) {
-                        const output = results.map(formatCard).join('\n');
-                        resultContainer.textContent = output;
-                        saveResult(output);
+                        resultContainer.textContent = results.map(formatCard).join('\n');
                     }
                 });
 
-                const output = results.map(formatCard).join('\n');
-                resultContainer.textContent = output;
-                saveResult(output);
-
-                statusText.textContent = `共找到 ${results.length} 条`;
-                saveStatus(statusText.textContent);
+                resultContainer.textContent = results.map(formatCard).join('\n');
+                statusText.textContent = `完成！共找到 ${results.length} 条。`;
 
                 if (results.length >= MAX_RESULTS) {
                     statusText.textContent += " (已达到显示上限)";
-                    saveStatus(statusText.textContent);
                 }
 
             } catch (e) {
                 console.error(e);
                 statusText.textContent = "生成中断或出错";
-                saveStatus(statusText.textContent);
             } finally {
                 btnGenerate.disabled = false;
                 btnGenerate.textContent = "生成卡号";
