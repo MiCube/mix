@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, viewport-fit=cover">
+  <title>银行卡列表</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+    }
+
+    body {
+      background: #f4f7fc;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      padding: 20px 16px 40px;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 480px;
+      margin: 0 auto;
+    }
+
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      padding: 8px 4px 16px;
+    }
+
+    .header h1 {
+      font-size: 24px;
+      font-weight: 600;
+      color: #0b1a33;
+      letter-spacing: 0.5px;
+    }
+
+    .header .badge {
+      background: #eef2f7;
+      color: #2c3e5c;
+      font-size: 14px;
+      font-weight: 500;
+      padding: 6px 14px;
+      border-radius: 30px;
+      box-shadow: inset 0 1px 3px rgba(0,0,0,0.02);
+    }
+
+    .card-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+      margin-top: 8px;
+    }
+
+    /* 卡片 ———— 圆角进一步调小 */
+    .bank-card {
+      background: #ffffff;
+      border-radius: 8px;  /* 从 12px 改为 8px */
+      padding: 18px 18px 18px 16px;
+      box-shadow: 0 12px 28px rgba(0, 10, 30, 0.08), 0 4px 12px rgba(0, 0, 0, 0.02);
+      border: 1px solid rgba(255, 255, 255, 0.5);
+      backdrop-filter: blur(2px);
+      display: flex;
+      flex-direction: column;
+    }
+
+    .card-body {
+      display: flex;
+      align-items: stretch;
+      gap: 14px;
+    }
+
+    /* 图片容器 ———— 圆角也调小 */
+    .card-image-wrapper {
+      flex-shrink: 0;
+      width: 150px;
+      height: 90px;
+      border-radius: 6px;  /* 从 8px 改为 6px */
+      background: #e9edf4;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+      border: 1px solid rgba(255,255,255,0.6);
+      cursor: pointer;
+      transition: transform 0.15s ease, box-shadow 0.2s;
+      position: relative;
+    }
+
+    .card-image-wrapper:active {
+      transform: scale(0.96);
+    }
+
+    .card-image-wrapper img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+      pointer-events: none;
+    }
+
+    .card-image-placeholder {
+      font-size: 32px;
+      opacity: 0.4;
+      filter: grayscale(0.1);
+      letter-spacing: 2px;
+      pointer-events: none;
+    }
+
+    /* 右侧信息 ———— 调整右侧内边距，与图片左侧边距一致 */
+    .card-info {
+      flex: 1;
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      /* 移除 max-width 限制，让文字自然填充 */
+      padding-right: 2px;  /* 右侧内边距，让文字不贴边，与图片左侧距离（16px - 14px gap）协调 */
+    }
+
+    .card-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 4px 6px;
+    }
+
+    .card-type {
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0.2px;
+      color: #1e2f4a;
+      background: rgba(0, 0, 0, 0.04);
+      padding: 2px 10px 2px 8px;
+      border-radius: 16px;  /* 从 20px 改为 16px */
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      backdrop-filter: blur(2px);
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+      line-height: 1.6;
+    }
+
+    .card-name {
+      font-size: 16px;
+      font-weight: 600;
+      color: #0b1a33;
+      line-height: 1.2;
+      word-break: break-word;
+    }
+
+    .card-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-top: 6px;
+      border-top: 1px solid rgba(0, 0, 0, 0.04);
+    }
+
+    .card-extra {
+      font-size: 11px;
+      color: #3a4e6b;
+      background: rgba(0, 0, 0, 0.02);
+      padding: 2px 10px;
+      border-radius: 16px;  /* 从 20px 改为 16px */
+      font-weight: 450;
+      letter-spacing: 0.2px;
+      line-height: 1.8;
+    }
+
+    .card-num {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      color: #2b405e;
+      font-size: 11px;
+      font-weight: 500;
+      background: #eef2f8;
+      padding: 2px 10px 2px 8px;
+      border-radius: 16px;  /* 从 20px 改为 16px */
+      line-height: 1.8;
+    }
+    .card-num span {
+      font-weight: 600;
+      color: #0b1a33;
+    }
+
+    /* 配色 */
+    .bank-card.color-1 { background: linear-gradient(145deg, #f0f4fe, #ffffff); border-color: rgba(80, 120, 220, 0.15); }
+    .bank-card.color-2 { background: linear-gradient(145deg, #f2f6f0, #ffffff); border-color: rgba(60, 160, 100, 0.15); }
+    .bank-card.color-3 { background: linear-gradient(145deg, #f0f2f8, #ffffff); border-color: rgba(120, 100, 200, 0.15); }
+    .bank-card.color-4 { background: linear-gradient(145deg, #fcf3ed, #ffffff); border-color: rgba(200, 120, 80, 0.15); }
+
+    /* 空状态 ———— 圆角调小 */
+    .empty-state {
+      text-align: center;
+      background: #ffffffd0;
+      backdrop-filter: blur(4px);
+      padding: 48px 20px;
+      border-radius: 12px;  /* 从 16px 改为 12px */
+      box-shadow: 0 8px 20px rgba(0,0,0,0.02);
+      border: 1px dashed #cbd5e1;
+      color: #4b5e7a;
+      margin-top: 30px;
+    }
+    .empty-state p {
+      font-size: 18px;
+      font-weight: 450;
+    }
+    .empty-state small {
+      display: block;
+      margin-top: 12px;
+      font-size: 14px;
+      color: #718096;
+    }
+
+    /* ===== 大图弹窗 (Lightbox) ===== */
+    .lightbox-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(0, 0, 0, 0.7);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.25s ease, visibility 0.25s;
+      padding: 24px;
+      box-sizing: border-box;
+    }
+
+    .lightbox-overlay.active {
+      opacity: 1;
+      visibility: visible;
+    }
+
+    .lightbox-content {
+      max-width: 90vw;
+      max-height: 80vh;
+      border-radius: 12px;  /* 从 16px 改为 12px */
+      overflow: hidden;
+      box-shadow: 0 30px 60px rgba(0, 0, 0, 0.5);
+      background: #fff;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      transform: scale(0.92);
+      transition: transform 0.25s cubic-bezier(0.18, 0.89, 0.32, 1.28);
+      position: relative;
+    }
+
+    .lightbox-overlay.active .lightbox-content {
+      transform: scale(1);
+    }
+
+    .lightbox-content img {
+      width: 100%;
+      height: auto;
+      max-height: 70vh;
+      object-fit: contain;
+      display: block;
+      background: #f0f2f6;
+      border-radius: 12px 12px 0 0;  /* 从 16px 改为 12px */
+    }
+
+    .lightbox-info {
+      width: 100%;
+      padding: 14px 20px 18px;
+      background: #ffffff;
+      border-radius: 0 0 12px 12px;  /* 从 16px 改为 12px */
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .lightbox-info .lb-name {
+      font-weight: 600;
+      font-size: 18px;
+      color: #0b1a33;
+    }
+
+    .lightbox-close {
+      background: #eef2f7;
+      border: none;
+      width: 36px;
+      height: 36px;
+      border-radius: 16px;  /* 从 20px 改为 16px */
+      font-size: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      color: #1f2f47;
+      transition: background 0.15s;
+      flex-shrink: 0;
+    }
+
+    .lightbox-close:active {
+      background: #d5dee9;
+      transform: scale(0.94);
+    }
+
+    /* 响应式 */
+    @media (max-width: 420px) {
+      .bank-card {
+        padding: 14px 12px 14px 12px;
+        border-radius: 6px;
+      }
+      .card-image-wrapper {
+        width: 120px;
+        height: 76px;
+        border-radius: 4px;
+      }
+      .card-name {
+        font-size: 14px;
+      }
+      .card-type {
+        font-size: 11px;
+        padding: 2px 8px 2px 6px;
+        border-radius: 12px;
+      }
+      .card-type::before {
+        font-size: 10px;
+      }
+      .card-extra {
+        font-size: 10px;
+        padding: 2px 8px;
+        border-radius: 12px;
+      }
+      .card-num {
+        font-size: 10px;
+        padding: 2px 8px 2px 6px;
+        border-radius: 12px;
+      }
+      .card-info {
+        padding-right: 0px;  /* 小屏上进一步缩窄 */
+      }
+      .lightbox-content {
+        max-width: 95vw;
+        max-height: 85vh;
+        border-radius: 10px;
+      }
+      .lightbox-content img {
+        border-radius: 10px 10px 0 0;
+      }
+      .lightbox-info {
+        padding: 12px 16px 16px;
+        border-radius: 0 0 10px 10px;
+      }
+      .lightbox-info .lb-name {
+        font-size: 16px;
+      }
+    }
+    @media (max-width: 370px) {
+      .card-image-wrapper {
+        width: 100px;
+        height: 64px;
+      }
+      .card-body {
+        gap: 10px;
+      }
+      .card-name {
+        font-size: 13px;
+      }
+      .card-info {
+        padding-right: 0px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container" id="app">
+    <div class="header">
+      <h1>💳 卡包</h1>
+      <span class="badge" id="cardCount">0 张</span>
+    </div>
+
+    <div id="cardList" class="card-grid"></div>
+  </div>
+
+  <!-- 大图弹窗 -->
+  <div class="lightbox-overlay" id="lightbox">
+    <div class="lightbox-content">
+      <img id="lightboxImg" src="" alt="银行卡大图">
+      <div class="lightbox-info">
+        <span class="lb-name" id="lbName">卡片名称</span>
+        <button class="lightbox-close" id="lightboxClose">✕</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    (function() {
+      // ------------------------------------------------------------
+      //  🟢 配置你的银行卡数据
+      //  字段说明:
+      //    type       : 卡片类型 (如 "Visa", "Mastercard", "银联")
+      //    name       : 卡片名称/昵称 (如 "工资卡", "日常消费")
+      //    extra      : 额外信息 (显示在底部左侧)
+      //    image      : 图片 URL (建议横版真实比例, 如 400x250)
+      //    cardNum    : 卡号后四位 (显示在底部右侧)
+      //    colorClass : 可选配色 class (color-1 ~ color-4)
+      // ------------------------------------------------------------
+      const cardData = [
+        {
+          type: "",
+          name: "招行金葵花",
+          extra: "借记卡",
+          image: "https://content.95516.com/cards/default/03080000/01/2ccb3c79-1f69-4554-bbc6-1bfa6ec671a0.png",
+          cardNum: "9999",
+          colorClass: "color-1"
+        },
+        {
+          type: "",
+          name: "工行黑财神",
+          extra: "借记卡",
+          image: "https://content.95516.com/cards/am/amBig/01/01020000/4ecace4118c44463b469640a0f397b00.png",
+          cardNum: "8888",
+          colorClass: "color-2"
+        },
+        {
+          type: "",
+          name: "农行江山卡",
+          extra: "借记卡",
+          image: "https://content.95516.com/cards/am/amBig/01/01030000/f7989850fb6f41ef85ff914fe20aa28e.png",
+          cardNum: "7777",
+          colorClass: "color-3"
+        },
+        {
+          type: "",
+          name: "中行长情卡",
+          extra: "借记卡",
+          image: "https://content.95516.com/cards/am/amBig/01/01040000/231f84626be84d48959350e230326553.png",
+          cardNum: "6666",
+          colorClass: "color-4"
+        },
+        {
+          type: "",
+          name: "建行理财金",
+          extra: "借记卡",
+          image: "https://content.95516.com/cards/default/01050000/01/01050000_01_3.png",
+          cardNum: "3333",
+          colorClass: "color-1"
+        }
+      ];
+
+      // ----- DOM 引用 -----
+      const cardListEl = document.getElementById('cardList');
+      const countBadge = document.getElementById('cardCount');
+      const lightbox = document.getElementById('lightbox');
+      const lightboxImg = document.getElementById('lightboxImg');
+      const lbName = document.getElementById('lbName');
+      const lightboxClose = document.getElementById('lightboxClose');
+
+      const colorPool = ['color-1', 'color-2', 'color-3', 'color-4'];
+
+      // ----- 大图控制 -----
+      function openLightbox(imageUrl, name, type) {
+        if (!imageUrl) return;
+        lightboxImg.src = imageUrl;
+        lbName.textContent = name || '银行卡';
+        lightbox.classList.add('active');
+        document.body.style.overflow = 'hidden';
+      }
+
+      function closeLightbox() {
+        lightbox.classList.remove('active');
+        document.body.style.overflow = '';
+      }
+
+      lightbox.addEventListener('click', function(e) {
+        if (e.target === lightbox) {
+          closeLightbox();
+        }
+      });
+
+      lightboxClose.addEventListener('click', closeLightbox);
+
+      document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') closeLightbox();
+      });
+
+      // ----- 渲染卡片 (无掩码) -----
+      function renderCards(cards) {
+        if (!cards || cards.length === 0) {
+          cardListEl.innerHTML = `
+            <div class="empty-state">
+              <p>📭 暂无银行卡</p>
+              <small>在 <code>cardData</code> 中添加卡片信息</small>
+            </div>
+          `;
+          countBadge.textContent = '0 张';
+          return;
+        }
+
+        let html = '';
+        cards.forEach((card, index) => {
+          const colorClass = card.colorClass || colorPool[index % colorPool.length];
+          const type = card.type || '';
+          const name = card.name || '未命名';
+          const extra = card.extra || '银行卡';
+          const imageUrl = card.image || null;
+          const cardNum = card.cardNum || '8888';
+
+          // 图片区域
+          let imageHtml = '';
+          if (imageUrl && imageUrl.trim() !== '') {
+            imageHtml = `<img src="${imageUrl}" alt="${name}" loading="lazy" onerror="this.style.display='none'; this.parentNode.innerHTML='<span class=\\'card-image-placeholder\\'>🏦</span>';">`;
+          } else {
+            imageHtml = `<span class="card-image-placeholder">🏦</span>`;
+          }
+
+          const dataImage = imageUrl || '';
+          const dataName = name;
+          const dataType = type;
+
+          cardTypeHtml = type == ''? '': `<span class="card-type">${type}</span>`;
+
+          html += `
+            <div class="bank-card ${colorClass}">
+              <div class="card-body">
+                <div class="card-image-wrapper"
+                     data-image="${dataImage}"
+                     data-name="${dataName}"
+                     data-type="${dataType}"
+                     onclick="window.__openCardImage(this)">
+                  ${imageHtml}
+                </div>
+                <div class="card-info">
+                  <div class="card-top">
+                    <span class="card-name">${name}</span>
+                    ${cardTypeHtml}
+                  </div>
+                  <div class="card-footer">
+                    <span class="card-extra">${extra}</span>
+                    <span class="card-num"><span>${cardNum}</span></span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          `;
+        });
+
+        cardListEl.innerHTML = html;
+        countBadge.textContent = `${cards.length} 张`;
+      }
+
+      // 暴露全局函数
+      window.__openCardImage = function(el) {
+        const image = el.dataset.image;
+        const name = el.dataset.name;
+        const type = el.dataset.type;
+        if (image && image.trim() !== '') {
+          openLightbox(image, name, type);
+        }
+      };
+
+      // 初始渲染
+      renderCards(cardData);
+
+      // 更新方法
+      window.updateCards = function(newData) {
+        if (Array.isArray(newData)) {
+          window.__cardData = newData.slice();
+          renderCards(window.__cardData);
+        } else {
+          console.warn('请传入数组格式的卡片数据');
+        }
+      };
+      window.__cardData = cardData;
+
+      console.log('💡 点击卡片图片查看大图 · 在控制台执行 updateCards([...]) 更新');
+      console.log('当前卡片数据:', cardData);
+    })();
+  </script>
+</body>
+</html>
